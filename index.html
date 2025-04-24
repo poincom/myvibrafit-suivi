@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi de Votre Commande - MyVibraFit</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .logo-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      max-width: 300px;
+      height: auto;
+    }
+    header {
+      background-color: #4a6fa5;
+      color: white;
+      padding: 20px 0;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+      margin-bottom: 30px;
+    }
+    .tracking-form {
+      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #4a6fa5;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #3a5a80;
+    }
+    .tracking-results {
+      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .tracking-status {
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding: 20px;
+      background-color: #e8f4ff;
+      border-radius: 4px;
+      border-left: 5px solid #4a6fa5;
+    }
+    .progress-container {
+      margin: 30px 0;
+      background-color: #eee;
+      border-radius: 8px;
+      height: 8px;
+      position: relative;
+    }
+    .progress-bar {
+      background-color: #4a6fa5;
+      height: 8px;
+      border-radius: 8px;
+      transition: width 0.5s ease;
+    }
+    .hidden {
+      display: none;
+    }
+    .error {
+      color: #e74c3c;
+      background-color: #fde8e6;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      border-left: 4px solid #e74c3c;
+    }
+    .tracking-info {
+      margin-top: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px 0;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo-container">
+      <img src="logo.png" alt="MyVibraFit Logo" class="logo">
+    </div>
+    
+    <header>
+      <h1>Suivi de Commande</h1>
+      <p>Suivez l'état de votre livraison</p>
+    </header>
+
+    <div class="tracking-form">
+      <h2>Entrez votre numéro de commande</h2>
+      <div class="form-group">
+        <label for="trackingNumber">Numéro de suivi</label>
+        <input type="text" id="trackingNumber" placeholder="Exemple: FR12345678">
+      </div>
+      <button onclick="trackPackage()">Suivre ma commande</button>
+      <div id="errorMessage" class="error hidden"></div>
+    </div>
+
+    <div id="trackingResults" class="tracking-results">
+      <h2>Statut de votre commande</h2>
+      <div id="trackingStatus" class="tracking-status"></div>
+      
+      <div class="progress-container">
+        <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+      </div>
+      
+      <div class="tracking-info">
+        <p id="trackingDetails"></p>
+      </div>
+    </div>
+
+    <footer>
+      <p>© 2025 - Service de suivi des commandes MyVibraFit</p>
+    </footer>
+  </div>
+<script>
+    // Définition des statuts par jour
+    const statusesByDay = [
+      { day: 0, status: "Votre commande est confirmée – traitement en cours" },
+      { day: 1, status: "Votre colis est en cours de préparation dans notre entrepôt" },
+      { day: 2, status: "Votre colis est en cours de préparation dans notre entrepôt" },
+      { day: 3, status: "Étiquette d'expédition créée pour votre colis" },
+      { day: 4, status: "Votre colis est emballé et prêt à quitter notre entrepôt" },
+      { day: 5, status: "Votre colis a été pris en charge par notre centre logistique" },
+      { day: 6, status: "Votre colis a été pris en charge par notre centre logistique" },
+      { day: 7, status: "Votre colis est en transit – départ de notre entrepôt principal" },
+      { day: 8, status: "Votre colis est en transit – en route vers le centre de tri" },
+      { day: 9, status: "Votre colis est arrivé au centre de tri régional" },
+      { day: 10, status: "Votre colis est en cours de vérification douanière" },
+      { day: 11, status: "Votre colis est en cours de vérification douanière" },
+      { day: 12, status: "Votre colis a été libéré et réintégré dans le circuit de distribution" },
+      { day: 13, status: "Votre colis est en route vers votre région" },
+      { day: 14, status: "Votre colis est en route vers votre région" },
+      { day: 15, status: "Votre colis est arrivé dans votre région" },
+      { day: 16, status: "Votre colis est en attente de prise en charge pour la distribution locale" },
+      { day: 17, status: "Votre colis est en attente de prise en charge pour la distribution locale" },
+      { day: 18, status: "Votre colis est en préparation pour la livraison finale" },
+      { day: 19, status: "Votre colis est en préparation pour la livraison finale" },
+      { day: 20, status: "Votre colis est en attente de remise au livreur" },
+      { day: 21, status: "Votre colis a été préparé pour la livraison finale" },
+      { day: 22, status: "Votre colis a été confié au livreur pour la distribution" },
+      { day: 23, status: "Votre colis est en tournée de livraison dans votre secteur" },
+      { day: 24, status: "Votre colis sera livré aujourd'hui" },
+      { day: 25, status: "Votre colis a été livré – Nous vous remercions pour votre commande" }
+    ];
+// Fonction pour récupérer les paramètres de l'URL
+    function getUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+      return {
+        numero: params.get('numero'),
+        date: params.get('date')
+      };
+    }
+
+    // Fonction pour calculer le nombre de jours entre deux dates
+    function daysBetween(startDate, endDate) {
+      const oneDay = 24 * 60 * 60 * 1000; // Millisecondes dans un jour
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      // Correction pour éviter les problèmes de fuseaux horaires
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      return Math.round((end - start) / oneDay);
+    }
+
+    // Fonction pour obtenir le statut en fonction du jour
+    function getStatusForDay(daysPassed) {
+      // Limiter à 25 jours maximum
+      const effectiveDays = Math.min(daysPassed, 25);
+      
+      // Retourner le statut correspondant au jour
+      return statusesByDay[effectiveDays];
+    }
+
+    // Fonction pour calculer le pourcentage de progression
+    function calculateProgress(daysPassed) {
+      const maxDays = 25;
+      return Math.min((daysPassed / maxDays) * 100, 100);
+    }
+// Fonction pour suivre le colis
+    function trackPackage() {
+      let trackingNumber = document.getElementById('trackingNumber').value.trim();
+      const errorMessage = document.getElementById('errorMessage');
+      const trackingResults = document.getElementById('trackingResults');
+      
+      // Vérifier si le numéro de suivi est fourni
+      if (!trackingNumber) {
+        errorMessage.textContent = "Veuillez entrer un numéro de suivi.";
+        errorMessage.classList.remove('hidden');
+        trackingResults.style.display = 'none';
+        return;
+      }
+      
+      // Récupérer les paramètres de l'URL
+      const params = getUrlParams();
+      
+      // Utiliser la date de l'URL ou la date actuelle
+      const startDate = params.date || new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Calculer le nombre de jours écoulés
+      const daysPassed = daysBetween(startDate, today);
+      
+      // Obtenir le statut actuel
+      const currentStatus = getStatusForDay(daysPassed);
+      
+      // Calculer le pourcentage de progression
+      const progressPercentage = calculateProgress(daysPassed);
+      
+      // Mettre à jour l'affichage du statut
+      document.getElementById('trackingStatus').innerHTML = `<strong>${currentStatus.status}</strong>`;
+      
+      // Mettre à jour la barre de progression
+      document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+      
+      // Mettre à jour les détails de suivi - MODIFIÉ POUR RETIRER LES JOURS ÉCOULÉS
+      document.getElementById('trackingDetails').innerHTML = `Numéro de suivi: ${trackingNumber}`;
+      
+      // Afficher les résultats
+      errorMessage.classList.add('hidden');
+      trackingResults.style.display = 'block';
+    }
+// Gérer le cas où le numéro est {tracking_number}
+    function handleTrackingNumberPlaceholder(trackingNum) {
+      if (trackingNum === '{tracking_number}') {
+        return '';  // Vide pour permettre la saisie manuelle
+      }
+      return trackingNum;
+    }
+
+    // Vérifier si l'URL contient déjà un numéro de suivi
+    document.addEventListener('DOMContentLoaded', function() {
+      const params = getUrlParams();
+      
+      if (params.numero) {
+        let trackingNum = params.numero;
+        
+        // Gérer le cas où le numéro est la variable non remplacée
+        trackingNum = handleTrackingNumberPlaceholder(trackingNum);
+        
+        if (trackingNum) {
+          document.getElementById('trackingNumber').value = trackingNum;
+          trackPackage();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
